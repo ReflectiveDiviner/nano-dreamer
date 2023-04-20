@@ -17,11 +17,12 @@ class HyperParameters:
     IMG_MODE:str = 'RGB'
 
     # ColourPicker params.
+    # TODO: MOAR colours.
     hue_ranges = {
         'red': (-20, 20),
         'yellow': (40, 80),
         'green': (100, 140),
-        'teal': (160, 200),
+        'cyan': (160, 200),
         'blue': (220, 260),
         'magenta': (280, 320),
     }
@@ -48,9 +49,9 @@ class HyperParameters:
     # TruncNorm distribution, (min, max, mu, sigma).
     circle_center_dist_distrib = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 2, 0.5, 0.25)
     circle_diameter_distrib = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 3, 0.5, 0.25)
-    circle_hues = ['green', 'teal']
+    circle_hues = ['green', 'cyan']
 
     line_perpendicular_angle_distrib = (0, 360)
     # TruncNorm distribution, (min, max, mu, sigma).
     line_center_dist_distrib = (0, IMG_SIZE[0] // 2, 0.5, 0.25)
-    line_hues = ['teal', 'magenta']
+    line_hues = ['cyan', 'magenta']
