@@ -11,6 +11,7 @@ class HyperParameters:
     SEED:int = 451
     BATCH_SIZE:int = 4
     NUM_WORKERS:int = 4
+    DATASETS_BASE_DIR:str = "~/datasets"
     TB_BASE_DIR:str = "."
     TB_RUNS_DIR:str = "mnist-aug"
 

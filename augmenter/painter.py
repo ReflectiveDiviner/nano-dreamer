@@ -46,7 +46,7 @@ def main(writer):
     generator = torch.Generator(hparams.DEVICE)
     generator.manual_seed(hparams.SEED)
     dataset = tv.datasets.MNIST(
-        "~/datasets",
+        hparams.DATASETS_BASE_DIR,
         transform=transform,
         train=True,
         download=True
