@@ -4,18 +4,16 @@ import random
 import numpy as np
 
 import torch
-from torch.utils.tensorboard.writer import SummaryWriter
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard.writer import SummaryWriter
 
 import torchvision as tv
-from torchvision.transforms.functional import pil_to_tensor
 
 from config import HyperParameters
 from color import RandomColorPicker
 from transforms import \
     CreateBackground, DrawRandomCircle, DrawRandomLine, \
-    DecorateImage, CompositeMNISTImage, PILnAuxToTensor, \
-    ConcatVertical
+    DecorateImage, CompositeMNISTImage, PILnAuxToTensor
 
 hparams = HyperParameters()
 color_picker = RandomColorPicker(hparams)
@@ -94,4 +92,3 @@ if __name__ == '__main__':
         f"{time.strftime('%Y-%m-%d/%z-%H%M%S', time.localtime())}"
     ) as writer:
         main(writer)
-
