@@ -75,7 +75,7 @@ def main(writer):
             else:
                 print(" | ", end='')
         print("----------------------------------")
-        if step > 2:
+        if step > 18:
             break
 
 
