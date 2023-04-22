@@ -14,7 +14,7 @@ class HyperParameters:
     IMG_SIZE: tuple[int, int] = _MNIST_SIZE
     DEVICE: str = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     SEED: int = 451
-    BATCH_SIZE: int = 4
+    BATCH_SIZE: int = 8
     NUM_WORKERS: int = 4
     DATASETS_BASE_DIR: str = "~/datasets"
     TB_BASE_DIR: str = "."
@@ -63,7 +63,7 @@ class HyperParameters:
     circle_center_dist_distrib: SampleSpaceTruncNormDistParams \
         = (IMG_SIZE[0] // 8, 3 * IMG_SIZE[0] // 8, 0.5, 0.25)
     circle_diameter_distrib: SampleSpaceTruncNormDistParams \
-        = (IMG_SIZE[0] // 12, IMG_SIZE[0] // 6, 0.5, 0.25)
+        = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 4, 0.5, 0.4)
     circle_hues: set[str] = dataclasses.field(
         default_factory=lambda: {'green', 'cyan'}
     )
