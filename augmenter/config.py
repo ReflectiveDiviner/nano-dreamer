@@ -2,8 +2,10 @@ import torch
 import dataclasses
 
 UniformDistParams = tuple[float, float]
-FloatTruncNormDistParams = tuple[float, float, float, float]
-IntTruncNormDistParams = tuple[int, int, float, float]
+
+# TruncNorm distribution parameters are given in sample space in the form
+# (left_bound, right_bound, rel_mu, rel_sigma)
+SampleSpaceTruncNormDistParams = tuple[float, float, float, float]
 
 _MNIST_SIZE = (28, 28)
 
@@ -21,8 +23,9 @@ class HyperParameters:
     IMG_MODE: str | None = 'RGB'
 
     # ColourPicker params.
+    # (left_bound, right_bound) for the hue TruncNorm in sample space.
     # TODO: MOAR colours.
-    hue_ranges: dict[str, tuple[int, int]] = dataclasses.field(
+    hue_ranges: dict[str, tuple[float, float]] = dataclasses.field(
         default_factory=lambda: {
             'red': (-20, 20),
             'yellow': (40, 80),
@@ -33,21 +36,19 @@ class HyperParameters:
         }
     )
 
-    # TruncNorm mu and sigma are all for [a, b] = [0, 1],
-    # except in the case of greyscale distribution.
-    # TruncNorm distribution, (min, max, mu, sigma).
-    hue_distrib: UniformDistParams = (0.5, 0.6)
-    saturation_distrib: FloatTruncNormDistParams = (0, 1, 0.8, 0.25)
-    lightness_distrib: FloatTruncNormDistParams = (0, 1, 0.5, 0.25)
+    # (rel_mu, rel_sigma) for the hue TruncNorm in sample space.
+    hue_distrib: tuple[float, float] = (0.5, 0.2)
+    saturation_distrib: SampleSpaceTruncNormDistParams = (0, 1, 0.8, 0.25)
+    lightness_distrib: SampleSpaceTruncNormDistParams = (0, 1, 0.5, 0.25)
 
-    # TruncNorm distribution, (min, max, mu, sigma).
-    greyscale_distrib: dict[str, FloatTruncNormDistParams] = dataclasses.field(
-        default_factory=lambda: {
-            'black': (0, 0.25, 0, 0.125),
-            'grey': (0.25, 0.75, 0.5, 0.125),
-            'white': (0.75, 1, 1, 0.125)
-        }
-    )
+    greyscale_distrib: dict[str, SampleSpaceTruncNormDistParams] = \
+        dataclasses.field(
+            default_factory=lambda: {
+                'black': (0, 0.25, 0, 0.5),
+                'grey': (0.25, 0.75, 0.5, 0.25),
+                'white': (0.75, 1, 1, 0.5)
+            }
+        )
 
     background_hues: set[str] = dataclasses.field(
         default_factory=lambda: {'red', 'yellow', 'blue'}
@@ -56,22 +57,22 @@ class HyperParameters:
     max_num_transforms = 2
 
     circle_center_direction_angle_distrib: \
-        UniformDistParams | FloatTruncNormDistParams \
+        UniformDistParams | SampleSpaceTruncNormDistParams \
         = (0, 360)
     # TruncNorm distribution, (min, max, mu, sigma).
-    circle_center_dist_distrib: FloatTruncNormDistParams \
-        = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 2, 0.5, 0.25)
-    circle_diameter_distrib: IntTruncNormDistParams \
-        = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 3, 0.5, 0.25)
+    circle_center_dist_distrib: SampleSpaceTruncNormDistParams \
+        = (IMG_SIZE[0] // 8, 3 * IMG_SIZE[0] // 8, 0.5, 0.25)
+    circle_diameter_distrib: SampleSpaceTruncNormDistParams \
+        = (IMG_SIZE[0] // 12, IMG_SIZE[0] // 6, 0.5, 0.25)
     circle_hues: set[str] = dataclasses.field(
         default_factory=lambda: {'green', 'cyan'}
     )
 
     line_perpendicular_angle_distrib: \
-        UniformDistParams | FloatTruncNormDistParams \
+        UniformDistParams | SampleSpaceTruncNormDistParams \
         = (0, 360)
     # TruncNorm distribution, (min, max, mu, sigma).
-    line_center_dist_distrib: FloatTruncNormDistParams \
+    line_center_dist_distrib: SampleSpaceTruncNormDistParams \
         = (0, IMG_SIZE[0] // 2, 0.5, 0.25)
     line_hues: set[str] = dataclasses.field(
         default_factory=lambda: {'cyan', 'magenta'}

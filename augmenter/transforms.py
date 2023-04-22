@@ -1,6 +1,5 @@
 import random
 import math
-from scipy.stats import truncnorm
 
 from PIL import Image, ImageDraw, ImageOps
 
@@ -9,7 +8,7 @@ import torchvision as tv
 
 from config import HyperParameters
 from color import RandomColorPicker
-from utils import truncnorm_intAB
+from utils import truncnorm_in_sample_space
 
 
 class CreateBackground(nn.Module):
@@ -60,9 +59,9 @@ class DrawRandomCircle(nn.Module):
         if all(len(self.center_direction_angle_distrib) != i for i in (2, 4)):
             raise ValueError('Invalid distribution parameters.')
         if len(self.center_direction_angle_distrib) == 4:
-            self.angle_func = truncnorm.rvs
+            self.angle_distrib_fun = truncnorm_in_sample_space
         if len(self.center_direction_angle_distrib) == 2:
-            self.angle_func = random.uniform
+            self.angle_distrib_fun = random.uniform
 
         self.center_dist_distrib = hparams.circle_center_dist_distrib
 
@@ -79,16 +78,16 @@ class DrawRandomCircle(nn.Module):
         for _ in range(num_circles):
             # Get angle with direction to circle center
             # from (1, 0) on unit circle.
-            angle = self.angle_func(*self.center_direction_angle_distrib)
+            angle = self.angle_distrib_fun(*self.center_direction_angle_distrib)
             angle *= math.pi / 180
 
-            dist = truncnorm.rvs(*self.center_dist_distrib)
+            dist = truncnorm_in_sample_space(*self.center_dist_distrib)
 
             # Compute center position.
             c_x = int(dist * math.cos(angle) + self.image_size[0] // 2)
             c_y = int(dist * math.sin(angle) + self.image_size[1] // 2)
 
-            d = truncnorm_intAB(*self.diameter_distrib)
+            d = int(truncnorm_in_sample_space(*self.diameter_distrib))
 
             bbox_x0 = c_x - d // 2
             bbox_y0 = c_y - d // 2
@@ -118,9 +117,9 @@ class DrawRandomLine(nn.Module):
         if all(len(self.perpendicular_angle_distrib) != i for i in (2, 4)):
             raise ValueError('Invalid distribution parameters.')
         if len(self.perpendicular_angle_distrib) == 4:
-            self.angle_func = truncnorm.rvs
+            self.angle_distrib_fun = truncnorm_in_sample_space
         if len(self.perpendicular_angle_distrib) == 2:
-            self.angle_func = random.uniform
+            self.angle_distrib_fun = random.uniform
 
         self.center_dist_distrib = hparams.line_center_dist_distrib
 
@@ -134,11 +133,11 @@ class DrawRandomLine(nn.Module):
         color, color_name = self.color_picker.get_color(self.hues, mode=mode)
         for _ in range(num_lines):
             # Get angle with perpendicular from (1, 0) on unit circle.
-            angle = self.angle_func(*self.perpendicular_angle_distrib)
+            angle = self.angle_distrib_fun(*self.perpendicular_angle_distrib)
             angle *= math.pi / 180
 
             # Get length on perpendicular from (0, 0) to the line.
-            dist = truncnorm.rvs(*self.center_dist_distrib)
+            dist = truncnorm_in_sample_space(*self.center_dist_distrib)
 
             # Params for the line of form: y = a * x + b.
             a = math.tan(angle - math.pi / 2)

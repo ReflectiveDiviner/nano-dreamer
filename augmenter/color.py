@@ -1,9 +1,8 @@
 import random
-from scipy.stats import truncnorm
 from PIL import ImageColor
 
 from config import HyperParameters
-from utils import truncnorm_intAB
+from utils import truncnorm_in_sample_space
 
 
 class RandomColorPicker:
@@ -28,7 +27,10 @@ class RandomColorPicker:
             return color, name
         if mode == 'L':
             name = random.choice(list(self.greyscale_distribution.keys()))
-            color = int(255 * truncnorm.rvs(*self.greyscale_distribution[name]))
+            color = int(
+                255 *
+                truncnorm_in_sample_space(*self.greyscale_distribution[name])
+            )
             return color, name
 
         name = random.choice(
@@ -36,11 +38,11 @@ class RandomColorPicker:
             if allowed_hues is None
             else list(allowed_hues)
         )
-        hue = truncnorm_intAB(*self.hue_ranges[name], *self.hue_distribution)
+        hue = truncnorm_in_sample_space(*self.hue_ranges[name], *self.hue_distribution)
         if hue < 0:
             hue += 360
-        saturation = truncnorm.rvs(*self.saturation_distribution)
-        lightness = truncnorm.rvs(*self.lightness_distribution)
+        saturation = truncnorm_in_sample_space(*self.saturation_distribution)
+        lightness = truncnorm_in_sample_space(*self.lightness_distribution)
 
         color = self.hsl_to_rgb(hue, saturation, lightness)
         if mode == 'RGB':
