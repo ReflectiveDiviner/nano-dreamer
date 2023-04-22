@@ -231,18 +231,16 @@ class DecorateImage(nn.Module):
         self.transforms = transforms
         self.max_num_transforms = hparams.max_num_transforms
 
-    def forward(self, inp):
-        if len(inp) == 3:
-            src, label_addon, passthrough = inp
-            suffix = ''
-        else:
-            src, label_addon = inp
-            suffix = ' over it'
-
+    def _inner_forward(
+        self,
+        src: Image.Image,
+        label_addon: str,
+        suffix: str=''
+    ) -> tuple[Image.Image, str]:
         draw = ImageDraw.Draw(src)
         num_transforms = random.randint(0, self.max_num_transforms)
         if num_transforms == 0:
-            return inp
+            return src, label_addon
         transforms_doing = random.choices(self.transforms, k=num_transforms)
         label_mods = []
         for transform in transforms_doing:
@@ -255,11 +253,21 @@ class DecorateImage(nn.Module):
             label_mods.append(f"{label_mod}{suffix}")
 
         label_addon = ' '.join([label_addon, *label_mods])
+        return src, label_addon
 
-        if len(inp) == 3:
-            return (src, label_addon, passthrough)
+    def forward(
+        self,
+        inp: \
+            tuple[Image.Image, str] |
+            tuple[Image.Image, str, Image.Image]
+    ) -> tuple[Image.Image, str] | tuple[Image.Image, str, Image.Image]:
+        src, label_addon = inp[:2]
+        passthrough = inp[-1]
+
+        if isinstance(passthrough, Image.Image):
+            return (*self._inner_forward(src, label_addon), passthrough)
         else:
-            return (src, label_addon)
+            return self._inner_forward(src, label_addon, ' over it')
 
 
 class CompositeMNISTImage(nn.Module):
