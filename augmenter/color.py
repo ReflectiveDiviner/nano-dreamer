@@ -14,7 +14,14 @@ class RandomColorPicker:
         self.saturation_distribution = hparams.saturation_distrib
         self.lightness_distribution = hparams.lightness_distrib
 
-    def get_color(self, allowed_hues=None, mode='RGB'):
+    def get_color(
+        self,
+        allowed_hues: set[str] | None=None,
+        mode:str ='RGB'
+    ) -> tuple[
+        tuple[int, int, int] | int,
+        str
+    ]:
         if mode == '1':
             color = random.getrandbits(1)
             name = 'white' if color else 'black'
@@ -27,7 +34,7 @@ class RandomColorPicker:
         name = random.choice(
             list(self.hue_ranges.keys())
             if allowed_hues is None
-            else allowed_hues
+            else list(allowed_hues)
         )
         hue = truncnorm_intAB(*self.hue_ranges[name], *self.hue_distribution)
         if hue < 0:
@@ -37,10 +44,16 @@ class RandomColorPicker:
 
         color = self.hsl_to_rgb(hue, saturation, lightness)
         if mode == 'RGB':
-            return color, name
+            return color[:3], name
         else:
             ink_string = f"rgb{color}"
             color = ImageColor.getcolor(ink_string, mode)
+            # For compatibility with Greyscale modes
+            # that are not denoted with '1' or 'L'.
+            if len(color) == 2:
+                color = color[0]
+            else:
+                color = color[:3]
             return color, name
 
     @staticmethod

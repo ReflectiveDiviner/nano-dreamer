@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import random
 import math
 from scipy.stats import truncnorm
@@ -27,7 +25,7 @@ class CreateBackground(nn.Module):
 
         self.hues = hparams.background_hues
 
-    def forward(self, passthrough: Optional[Image.Image]=None):
+    def forward(self, passthrough: Image.Image | None=None):
         size = (
             passthrough.size
             if passthrough is not None
@@ -280,7 +278,10 @@ class DecorateImage(nn.Module):
 
 
 class CompositeMNISTImage(nn.Module):
-    def forward(self, inp):
+    def forward(
+        self,
+        inp: tuple[Image.Image, str, Image.Image]
+    ) -> tuple[Image.Image, str]:
         src, label_addon, mnist_image_L = inp
 
         # If we're making coloured images, convert MNIST image to RGB.
@@ -306,7 +307,7 @@ class PILnAuxToTensor(nn.Module):
 
 
 class ConcatVertical(nn.Module):
-    def forward(self, src: Tuple[Image.Image, ...]):
+    def forward(self, src: tuple[Image.Image, ...]):
         if len(set(img.mode for img in src)) > 1:
             raise ValueError("All input images' modes must be the same.")
         dst = Image.new(

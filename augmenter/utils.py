@@ -1,8 +1,11 @@
 from scipy.stats import truncnorm
 
 def truncnorm_intAB(
-    int_min, int_max, mu, sigma
-):
+    int_min: int,
+    int_max: int,
+    mu: float,
+    sigma: float
+) -> int:
     # (
     # min,
     # max,
