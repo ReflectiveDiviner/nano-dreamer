@@ -13,7 +13,7 @@ class HyperParameters:
     NUM_WORKERS:int = 4
     DATASETS_BASE_DIR:str = "~/datasets"
     TB_BASE_DIR:str = "."
-    TB_RUNS_DIR:str = "mnist-aug"
+    TB_RUNS_DIR:str = "nano-dreamer-runs"
 
     IMG_MODE:str = 'RGB'
 

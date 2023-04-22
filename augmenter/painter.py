@@ -85,6 +85,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 1:
         hparams.TB_BASE_DIR = sys.argv[1]
+    hparams.TB_RUNS_DIR = "mnist-aug"
 
     with SummaryWriter(
         f"{hparams.TB_BASE_DIR}/"
