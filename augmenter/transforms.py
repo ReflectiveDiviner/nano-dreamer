@@ -171,11 +171,13 @@ class DrawRandomLine(nn.Module):
                 (None, -self.image_size[1] // 2),
             ):
                 if side_x is None:
+                    assert side_y is not None
                     y = side_y
                     x = (y - b) / (a + 1e-5)
                     if not is_valid_incidence(x, 0):
                         continue
                 else:
+                    assert side_x is not None
                     x = side_x
                     y = a * x + b
                     if not is_valid_incidence(y, 1):
@@ -186,6 +188,12 @@ class DrawRandomLine(nn.Module):
                 )
 
             # Process edge case 3.
+            if len(valid_incidences) < 2:
+                raise RuntimeError(
+                    "Line and image have less than two "
+                    "valid points of incidence, "
+                    "check distance distribution parameters."
+                )
             if len(valid_incidences) > 2:
                 unique_incidences = {}
                 for x, y in valid_incidences:
@@ -211,6 +219,7 @@ class DrawRandomLine(nn.Module):
                             for i in range(2)
                         )
                     ]
+                assert len(valid_incidences) == 2
             else:
                 xy = valid_incidences
 
