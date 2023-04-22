@@ -14,36 +14,41 @@ from color import RandomColorPicker
 from transforms import \
     CreateBackground, DrawRandomCircle, DrawRandomLine, \
     DecorateImage, CompositeMNISTImage, PILnAuxToTensor
-
-hparams = HyperParameters()
-color_picker = RandomColorPicker(hparams)
-
-transform = tv.transforms.Compose([
-    CreateBackground(hparams, color_picker),
-    DecorateImage(
-        hparams,
-        [
-            (DrawRandomCircle(hparams, color_picker), 3),
-            (DrawRandomLine(hparams, color_picker), 2)
-        ]
-    ),
-    CompositeMNISTImage(),
-    DecorateImage(
-        hparams,
-        [
-            DrawRandomCircle(hparams, color_picker),
-            (DrawRandomLine(hparams, color_picker), 2)
-        ]
-    ),
-    PILnAuxToTensor()
-])
+from dataset import MNISTwAnnotatedAugmentations
 
 
 @torch.no_grad()
-def main(writer):
+def main(hparams: HyperParameters, writer: SummaryWriter):
+    # Reproducibility.
+    torch.manual_seed(hparams.SEED)
+    np.random.seed(hparams.SEED)
+    random.seed(hparams.SEED)
     generator = torch.Generator(hparams.DEVICE)
     generator.manual_seed(hparams.SEED)
-    dataset = tv.datasets.MNIST(
+
+    color_picker = RandomColorPicker(hparams)
+
+    transform = tv.transforms.Compose([
+        CreateBackground(hparams, color_picker),
+        DecorateImage(
+            hparams,
+            [
+                (DrawRandomCircle(hparams, color_picker), 3),
+                (DrawRandomLine(hparams, color_picker), 2)
+            ]
+        ),
+        CompositeMNISTImage(),
+        DecorateImage(
+            hparams,
+            [
+                DrawRandomCircle(hparams, color_picker),
+                (DrawRandomLine(hparams, color_picker), 2)
+            ]
+        ),
+        PILnAuxToTensor()
+    ])
+
+    dataset = MNISTwAnnotatedAugmentations(
         hparams.DATASETS_BASE_DIR,
         transform=transform,
         train=True,
@@ -58,13 +63,13 @@ def main(writer):
     )
 
     img_per_row = hparams.BATCH_SIZE // 2
-    for step, ((img, label_addon), label) in enumerate(loader):
-        grid = tv.utils.make_grid(img, nrow=img_per_row)
+    for step, batch in enumerate(loader):
+        images = batch['image']
+        labels = batch['label']
+        annotations = batch['annotation']
+
+        grid = tv.utils.make_grid(images, nrow=img_per_row)
         writer.add_image('COOLBEANS', grid, step)
-        labels = [
-            f"{start} {end}"
-            for start, end in zip(label.tolist(), label_addon)
-        ]
 
         for idx, l in enumerate(labels):
             print(l, end='')
@@ -78,11 +83,7 @@ def main(writer):
 
 
 if __name__ == '__main__':
-    # Reproducibility.
-    torch.manual_seed(hparams.SEED)
-    np.random.seed(hparams.SEED)
-    random.seed(hparams.SEED)
-
+    hparams = HyperParameters()
     if len(sys.argv) > 1:
         hparams.TB_BASE_DIR = sys.argv[1]
     hparams.TB_RUNS_DIR = "mnist-aug"
@@ -92,4 +93,4 @@ if __name__ == '__main__':
         f"{hparams.TB_RUNS_DIR}/"
         f"{time.strftime('%Y-%m-%d/%z-%H%M%S', time.localtime())}"
     ) as writer:
-        main(writer)
+        main(hparams, writer)
