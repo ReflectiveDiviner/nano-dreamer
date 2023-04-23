@@ -14,18 +14,14 @@ from color import RandomColorPicker
 from transforms import \
     CreateBackground, DrawRandomCircle, DrawRandomLine, \
     DecorateImage, CompositeMNISTImage, PILnAuxToTensor
-from dataset import MNISTwAnnotatedAugmentations
+from dataset import MNISTwAnnotatedAugmentations, MNISTwAnnotationsCollate_fn
 
 
-@torch.no_grad()
-def main(hparams: HyperParameters, writer: SummaryWriter):
-    # Reproducibility.
-    torch.manual_seed(hparams.SEED)
-    np.random.seed(hparams.SEED)
-    random.seed(hparams.SEED)
-    generator = torch.Generator(hparams.DEVICE)
-    generator.manual_seed(hparams.SEED)
-
+def get_dataloader(
+    hparams: HyperParameters,
+    generator: torch.Generator | None=None,
+    train: bool=True
+):
     color_picker = RandomColorPicker(hparams)
 
     transform = tv.transforms.Compose([
@@ -51,16 +47,29 @@ def main(hparams: HyperParameters, writer: SummaryWriter):
     dataset = MNISTwAnnotatedAugmentations(
         hparams.DATASETS_BASE_DIR,
         transform=transform,
-        train=True,
+        train=train,
         download=True
     )
-    loader = DataLoader(
+    return DataLoader(
         dataset,
         batch_size=hparams.BATCH_SIZE,
-        shuffle=True,
+        shuffle=train,
         generator=generator,
-        num_workers=hparams.NUM_WORKERS
+        num_workers=hparams.NUM_WORKERS,
+        collate_fn=MNISTwAnnotationsCollate_fn
     )
+
+
+@torch.no_grad()
+def main(hparams: HyperParameters, writer: SummaryWriter):
+    # Reproducibility.
+    generator = torch.Generator(hparams.DEVICE)
+    generator.manual_seed(hparams.SEED)
+    torch.manual_seed(hparams.SEED)
+    np.random.seed(hparams.SEED)
+    random.seed(hparams.SEED)
+
+    loader = get_dataloader(hparams)
 
     img_per_row = hparams.BATCH_SIZE // 2
     for step, batch in enumerate(loader):
@@ -78,6 +87,13 @@ def main(hparams: HyperParameters, writer: SummaryWriter):
             else:
                 print(" | ", end='')
         print("----------------------------------")
+        for idx, a in enumerate(annotations):
+            print(a, end='')
+            if (idx % img_per_row) == (img_per_row - 1):
+                print()
+            else:
+                print(" | ", end='')
+        print("++++++++++++++++++++++++++++++++++")
         if step > 18:
             break
 
@@ -87,9 +103,6 @@ if __name__ == '__main__':
     runs_dir = 'mnist-aug'
 
     hparams = HyperParameters()
-    if len(sys.argv) > 1:
-        hparams.TB_BASE_DIR = sys.argv[1]
-    hparams.TB_RUNS_DIR = "mnist-aug"
 
     with SummaryWriter(
         f"{tb_base_dir}/"
