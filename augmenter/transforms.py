@@ -105,7 +105,6 @@ class DrawRandomCircle(nn.Module):
 
 class DrawRandomLine(nn.Module):
     # TODO: Assumes square images right now, maybe generalise to rectangles.
-    # Change random generation to do random direction and distance from center.
     def __init__(
         self,
         hparams: HyperParameters,
