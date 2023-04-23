@@ -83,14 +83,17 @@ def main(hparams: HyperParameters, writer: SummaryWriter):
 
 
 if __name__ == '__main__':
+    tb_base_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    runs_dir = 'mnist-aug'
+
     hparams = HyperParameters()
     if len(sys.argv) > 1:
         hparams.TB_BASE_DIR = sys.argv[1]
     hparams.TB_RUNS_DIR = "mnist-aug"
 
     with SummaryWriter(
-        f"{hparams.TB_BASE_DIR}/"
-        f"{hparams.TB_RUNS_DIR}/"
+        f"{tb_base_dir}/"
+        f"{runs_dir}/"
         f"{time.strftime('%Y-%m-%d/%z-%H%M%S', time.localtime())}"
     ) as writer:
         main(hparams, writer)
