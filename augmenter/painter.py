@@ -15,6 +15,7 @@ from transforms import \
     CreateBackground, DrawRandomCircle, DrawRandomLine, \
     DecorateImage, CompositeMNISTImage, PILnAuxToTensor
 from dataset import MNISTwAnnotatedAugmentations, MNISTwAnnotationsCollate_fn
+from utils import set_seeds
 
 
 def get_dataloader(
@@ -63,13 +64,9 @@ def get_dataloader(
 @torch.no_grad()
 def main(hparams: HyperParameters, writer: SummaryWriter):
     # Reproducibility.
-    generator = torch.Generator(hparams.DEVICE)
-    generator.manual_seed(hparams.SEED)
-    torch.manual_seed(hparams.SEED)
-    np.random.seed(hparams.SEED)
-    random.seed(hparams.SEED)
+    generator = set_seeds(hparams.SEED, hparams.DEVICE)
 
-    loader = get_dataloader(hparams)
+    loader = get_dataloader(hparams, generator)
 
     img_per_row = hparams.BATCH_SIZE // 2
     for step, batch in enumerate(loader):

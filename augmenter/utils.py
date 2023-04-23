@@ -1,4 +1,8 @@
 from scipy.stats import truncnorm
+import numpy as np
+import random
+import torch
+
 
 def truncnorm_in_sample_space(
     left_bound: float,
@@ -28,3 +32,19 @@ def truncnorm_in_sample_space(
     )
 
     return truncnorm.rvs(a, b, loc=loc, scale=scale)
+
+
+def set_seeds(
+    seed: int,
+    device: str | None=None
+) -> torch.Generator | None:
+    # Sets seeds, optionally returns a torch.Generator as well.
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+    if device is None:
+        return
+    generator = torch.Generator(device)
+    generator.manual_seed(seed)
+    return generator
