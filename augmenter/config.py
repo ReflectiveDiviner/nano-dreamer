@@ -10,7 +10,7 @@ SampleSpaceTruncNormDistParams = tuple[float, float, float, float]
 _MNIST_SIZE = (28, 28)
 
 @dataclasses.dataclass
-class HyperParameters:
+class AugmenterParameters:
     IMG_SIZE: tuple[int, int] = _MNIST_SIZE
     DEVICE: str = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     SEED: int = 451

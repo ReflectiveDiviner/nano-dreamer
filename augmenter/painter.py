@@ -9,7 +9,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 import torchvision as tv
 
-from config import HyperParameters
+from config import AugmenterParameters
 from color import RandomColorPicker
 from transforms import \
     CreateBackground, DrawRandomCircle, DrawRandomLine, \
@@ -19,7 +19,7 @@ from utils import set_seeds
 
 
 def get_dataloader(
-    hparams: HyperParameters,
+    hparams: AugmenterParameters,
     generator: torch.Generator | None=None,
     train: bool=True
 ):
@@ -62,7 +62,7 @@ def get_dataloader(
 
 
 @torch.no_grad()
-def main(hparams: HyperParameters, writer: SummaryWriter):
+def main(hparams: AugmenterParameters, writer: SummaryWriter):
     # Reproducibility.
     generator = set_seeds(hparams.SEED, hparams.DEVICE)
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     tb_base_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     runs_dir = 'mnist-aug'
 
-    hparams = HyperParameters()
+    hparams = AugmenterParameters()
 
     with SummaryWriter(
         f"{tb_base_dir}/"

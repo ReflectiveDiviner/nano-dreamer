@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageOps
 from torch import nn
 import torchvision as tv
 
-from config import HyperParameters
+from config import AugmenterParameters
 from color import RandomColorPicker
 from utils import truncnorm_in_sample_space
 
@@ -14,7 +14,7 @@ from utils import truncnorm_in_sample_space
 class CreateBackground(nn.Module):
     def __init__(
         self,
-        hparams: HyperParameters,
+        hparams: AugmenterParameters,
         color_picker: RandomColorPicker
     ) -> None:
         super().__init__()
@@ -50,7 +50,7 @@ class DrawRandomCircle(nn.Module):
     # TODO: Assumes square images right now, maybe generalise to rectangles.
     def __init__(
         self,
-        hparams: HyperParameters,
+        hparams: AugmenterParameters,
         color_picker: RandomColorPicker
     ) -> None:
         super().__init__()
@@ -107,7 +107,7 @@ class DrawRandomLine(nn.Module):
     # TODO: Assumes square images right now, maybe generalise to rectangles.
     def __init__(
         self,
-        hparams: HyperParameters,
+        hparams: AugmenterParameters,
         color_picker: RandomColorPicker
     ) -> None:
         super().__init__()
@@ -229,7 +229,7 @@ class DrawRandomLine(nn.Module):
 class DecorateImage(nn.Module):
     def __init__(
         self,
-        hparams: HyperParameters,
+        hparams: AugmenterParameters,
         transforms
     ) -> None:
         super().__init__()

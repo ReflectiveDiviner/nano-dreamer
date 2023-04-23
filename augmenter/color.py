@@ -1,12 +1,12 @@
 import random
 from PIL import ImageColor
 
-from config import HyperParameters
+from config import AugmenterParameters
 from utils import truncnorm_in_sample_space
 
 
 class RandomColorPicker:
-    def __init__(self, hparams: HyperParameters) -> None:
+    def __init__(self, hparams: AugmenterParameters) -> None:
         self.greyscale_distribution = hparams.greyscale_distrib
         self.hue_ranges = hparams.hue_ranges
         self.hue_distribution = hparams.hue_distrib
