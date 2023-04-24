@@ -15,7 +15,7 @@ class RandomColorPicker:
 
     def get_color(
         self,
-        allowed_hues: set[str] | None=None,
+        allowed_hues: list[str] | None=None,
         mode:str ='RGB'
     ) -> tuple[
         tuple[int, int, int] | int,
@@ -36,9 +36,12 @@ class RandomColorPicker:
         name = random.choice(
             list(self.hue_ranges.keys())
             if allowed_hues is None
-            else list(allowed_hues)
+            else allowed_hues
         )
-        hue = truncnorm_in_sample_space(*self.hue_ranges[name], *self.hue_distribution)
+        hue = truncnorm_in_sample_space(
+            *self.hue_ranges[name],
+            *self.hue_distribution
+        )
         if hue < 0:
             hue += 360
         saturation = truncnorm_in_sample_space(*self.saturation_distribution)

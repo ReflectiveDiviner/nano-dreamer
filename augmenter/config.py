@@ -48,8 +48,8 @@ class AugmenterParameters:
             }
         )
 
-    background_hues: set[str] = dataclasses.field(
-        default_factory=lambda: {'red', 'yellow', 'blue'}
+    background_hues: list[str] = dataclasses.field(
+        default_factory=lambda: ['red', 'yellow', 'blue']
     )
 
     max_num_transforms = 2
@@ -62,8 +62,8 @@ class AugmenterParameters:
         = (IMG_SIZE[0] // 8, 3 * IMG_SIZE[0] // 8, 0.5, 0.25)
     circle_diameter_distrib: SampleSpaceTruncNormDistParams \
         = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 4, 0.5, 0.4)
-    circle_hues: set[str] = dataclasses.field(
-        default_factory=lambda: {'green', 'cyan'}
+    circle_hues: list[str] = dataclasses.field(
+        default_factory=lambda: ['green', 'cyan']
     )
 
     line_perpendicular_angle_distrib: \
@@ -72,6 +72,6 @@ class AugmenterParameters:
     # TruncNorm distribution, (min, max, mu, sigma).
     line_center_dist_distrib: SampleSpaceTruncNormDistParams \
         = (0, IMG_SIZE[0] // 2, 0.5, 0.25)
-    line_hues: set[str] = dataclasses.field(
-        default_factory=lambda: {'cyan', 'magenta'}
+    line_hues: list[str] = dataclasses.field(
+        default_factory=lambda: ['cyan', 'magenta']
     )
