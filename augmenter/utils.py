@@ -1,5 +1,5 @@
 from scipy.stats import truncnorm
-import numpy as np
+from numpy.random import MT19937, SeedSequence, RandomState
 import random
 import torch
 
@@ -36,15 +36,8 @@ def truncnorm_in_sample_space(
 
 def set_seeds(
     seed: int,
-    device: str | None=None
-) -> torch.Generator | None:
-    # Sets seeds, optionally returns a torch.Generator as well.
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+) -> torch.Generator:
+    # Sets seeds, essentially an extension of torch.manual_seed.
     random.seed(seed)
-
-    if device is None:
-        return
-    generator = torch.Generator(device)
-    generator.manual_seed(seed)
-    return generator
+    RandomState(MT19937(SeedSequence(seed)))
+    return torch.manual_seed(seed)

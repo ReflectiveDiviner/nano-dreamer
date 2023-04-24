@@ -64,7 +64,7 @@ def get_dataloader(
 @torch.no_grad()
 def main(hparams: AugmenterParameters, writer: SummaryWriter):
     # Reproducibility.
-    generator = set_seeds(hparams.SEED, hparams.DEVICE)
+    generator = set_seeds(hparams.SEED)
 
     loader = get_dataloader(hparams, generator)
 
