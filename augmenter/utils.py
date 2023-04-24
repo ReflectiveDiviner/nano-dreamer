@@ -1,6 +1,8 @@
-from scipy.stats import truncnorm
-from numpy.random import MT19937, SeedSequence, RandomState
 import random
+
+from numpy.random import MT19937, SeedSequence, RandomState
+from scipy.stats import truncnorm
+
 import torch
 
 
