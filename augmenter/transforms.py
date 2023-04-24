@@ -282,14 +282,13 @@ class CompositeMNISTImage(nn.Module):
     ) -> tuple[Image.Image, str]:
         src, label_addon, mnist_image_L = inp
 
-        # If we're making coloured images, convert MNIST image to RGB.
-        # White numbers look bad on coloured backgrounds, invert them.
-        if src.mode == 'RGB':
-            mnist_image = ImageOps.invert(mnist_image_L).convert('RGB')
-        else:
-            mnist_image = mnist_image_L
-
-        dst = Image.composite(src, mnist_image, ImageOps.invert(mnist_image_L))
+        # White numbers look bad on coloured backgrounds, so paint them black.
+        number_source_sheet = Image.new(src.mode, src.size)
+        dst = Image.composite(
+            src,
+            number_source_sheet,
+            ImageOps.invert(mnist_image_L)
+        )
         return dst, label_addon
 
 
