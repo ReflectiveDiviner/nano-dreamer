@@ -1,4 +1,3 @@
-import torch
 import dataclasses
 
 UniformDistParams = tuple[float, float]
@@ -7,19 +6,9 @@ UniformDistParams = tuple[float, float]
 # (left_bound, right_bound, rel_mu, rel_sigma)
 SampleSpaceTruncNormDistParams = tuple[float, float, float, float]
 
-_MNIST_SIZE = (28, 28)
 
 @dataclasses.dataclass
 class AugmenterParameters:
-    IMG_SIZE: tuple[int, int] = _MNIST_SIZE
-    DEVICE: str = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    SEED: int = 451
-    BATCH_SIZE: int = 8
-    NUM_WORKERS: int = 4
-    DATASETS_BASE_DIR: str = "~/datasets"
-
-    IMG_MODE: str | None = 'RGB'
-
     # ColourPicker params.
     # (left_bound, right_bound) for the hue TruncNorm in sample space.
     # TODO: MOAR colours.
@@ -54,24 +43,28 @@ class AugmenterParameters:
 
     max_num_transforms = 2
 
+    # TODO: Make transform configuration hierarchical.
     circle_center_direction_angle_distrib: \
         UniformDistParams | SampleSpaceTruncNormDistParams \
         = (0, 360)
-    # TruncNorm distribution, (min, max, mu, sigma).
+    # min and max are in fractions of half of image spatial sizes.
     circle_center_dist_distrib: SampleSpaceTruncNormDistParams \
-        = (IMG_SIZE[0] // 8, 3 * IMG_SIZE[0] // 8, 0.5, 0.25)
+        = (1 / 4, 3 / 4, 0.5, 0.25)
+    # min and max are in fractions of the smallest of image spatial sizes.
     circle_diameter_distrib: SampleSpaceTruncNormDistParams \
-        = (IMG_SIZE[0] // 6, IMG_SIZE[0] // 4, 0.5, 0.4)
+        = (1 / 6, 1 / 4, 0.5, 0.4)
     circle_hues: list[str] = dataclasses.field(
         default_factory=lambda: ['green', 'cyan']
     )
+    circle_max_num: int = 3
 
     line_perpendicular_angle_distrib: \
         UniformDistParams | SampleSpaceTruncNormDistParams \
         = (0, 360)
-    # TruncNorm distribution, (min, max, mu, sigma).
+    # min and max are in fractions of half of image spatial sizes.
     line_center_dist_distrib: SampleSpaceTruncNormDistParams \
-        = (0, IMG_SIZE[0] // 2, 0.5, 0.25)
+        = (0, 1, 0.5, 0.25)
     line_hues: list[str] = dataclasses.field(
         default_factory=lambda: ['cyan', 'magenta']
     )
+    line_max_num: int = 2

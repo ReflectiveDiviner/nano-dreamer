@@ -1,3 +1,4 @@
+import abc
 import random
 import math
 
@@ -6,33 +7,45 @@ from PIL import Image, ImageDraw, ImageOps
 from torch import nn
 import torchvision as tv
 
-from config import AugmenterParameters
-from color import RandomColorPicker
-from utils import truncnorm_in_sample_space
+from .config import AugmenterParameters
+from .color import RandomColorPicker
+from .utils import truncnorm_in_sample_space
 
 
 class CreateBackground(nn.Module):
     def __init__(
         self,
         hparams: AugmenterParameters,
-        color_picker: RandomColorPicker
+        color_picker: RandomColorPicker,
+        image_size: tuple[int, int] | None=None,
+        mode_override: str | None=None
     ) -> None:
         super().__init__()
-        self.mode = hparams.IMG_MODE
-        self.image_size = hparams.IMG_SIZE
+        self.mode_override = mode_override
         self.color_picker = color_picker
+        self.image_size = image_size
 
         self.hues = hparams.background_hues
 
-    def forward(self, passthrough: Image.Image | None=None):
+    def forward(
+        self,
+        passthrough: Image.Image | None=None
+    ):
         size = (
             passthrough.size
             if passthrough is not None
             else self.image_size
         )
-        mode = self.mode or (
-            passthrough.mode if passthrough is not None else None
-        ) or 'RGB'
+        if size is None:
+            raise ValueError(
+                "Running in image creation mode, image_size was not provided. "
+                "Provide image_size in the constructor."
+            )
+        mode = (
+            self.mode_override or
+            (passthrough.mode if passthrough is not None else None) or
+            'RGB'
+        )
 
         color, name = self.color_picker.get_color(self.hues, mode)
         img = Image.new(mode, size, color)
@@ -46,18 +59,37 @@ class CreateBackground(nn.Module):
         return result
 
 
-class DrawRandomCircle(nn.Module):
-    # TODO: Assumes square images right now, maybe generalise to rectangles.
+class AugmentationTransform(nn.Module, abc.ABC):
+    @abc.abstractmethod
     def __init__(
         self,
         hparams: AugmenterParameters,
         color_picker: RandomColorPicker
     ) -> None:
-        super().__init__()
+        pass
+
+    @abc.abstractmethod
+    def forward(
+        self,
+        draw: ImageDraw.ImageDraw,
+        image_size: tuple[int, int],
+        mode: str
+    ) -> str:
+        pass
+
+
+class DrawRandomCircle(AugmentationTransform):
+    pass
+    def __init__(
+        self,
+        hparams: AugmenterParameters,
+        color_picker: RandomColorPicker
+    ) -> None:
+        super(AugmentationTransform, self).__init__()
         self.center_direction_angle_distrib = \
             hparams.circle_center_direction_angle_distrib
         if all(len(self.center_direction_angle_distrib) != i for i in (2, 4)):
-            raise ValueError('Invalid distribution parameters.')
+            raise ValueError("Invalid distribution parameters.")
         if len(self.center_direction_angle_distrib) == 4:
             self.angle_distrib_fun = truncnorm_in_sample_space
         if len(self.center_direction_angle_distrib) == 2:
@@ -70,24 +102,46 @@ class DrawRandomCircle(nn.Module):
         self.color_picker = color_picker
         self.hues = hparams.circle_hues
 
-        # TODO: This is ugly, change tranform signature maybe?
-        self.image_size = hparams.IMG_SIZE
+        self.max_num_transforms = hparams.circle_max_num
+        if hparams.circle_max_num < 1:
+            raise ValueError(
+                f"Expected circle_max_num > 0, got {hparams.circle_max_num}"
+            )
 
-    def forward(self, draw: ImageDraw.ImageDraw, mode, num_circles=1):
+    def forward(
+        self,
+        draw: ImageDraw.ImageDraw,
+        image_size: tuple[int, int],
+        mode: str
+    ) -> str:
         color, color_name = self.color_picker.get_color(self.hues, mode=mode)
+        num_circles = random.randint(1, self.max_num_transforms)
         for _ in range(num_circles):
-            # Get angle with direction to circle center
-            # from (1, 0) on unit circle.
+            # Get distance from image center (0, 0) to circle center.
+            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
+            # dist_<x|y> = 0.5 * image_size[x|y] * <random fraction>
+            dist = math.sqrt(sum(
+                (
+                    0.5 *
+                    image_size[i] *
+                    truncnorm_in_sample_space(*self.center_dist_distrib)
+                ) ** 2
+                for i in range(2)
+            ))
+
+            # Get angle with direction to circle center from (0, 0).
             angle = self.angle_distrib_fun(*self.center_direction_angle_distrib)
             angle *= math.pi / 180
 
-            dist = truncnorm_in_sample_space(*self.center_dist_distrib)
-
             # Compute center position.
-            c_x = int(dist * math.cos(angle) + self.image_size[0] // 2)
-            c_y = int(dist * math.sin(angle) + self.image_size[1] // 2)
+            c_x = int(dist * math.cos(angle) + image_size[0] // 2)
+            c_y = int(dist * math.sin(angle) + image_size[1] // 2)
 
-            d = int(truncnorm_in_sample_space(*self.diameter_distrib))
+            # Diameter is a fraction of the smallest of image spatial sizes.
+            d = int(
+                min(image_size) *
+                truncnorm_in_sample_space(*self.diameter_distrib)
+            )
 
             bbox_x0 = c_x - d // 2
             bbox_y0 = c_y - d // 2
@@ -103,14 +157,13 @@ class DrawRandomCircle(nn.Module):
         )
 
 
-class DrawRandomLine(nn.Module):
-    # TODO: Assumes square images right now, maybe generalise to rectangles.
+class DrawRandomLine(AugmentationTransform):
     def __init__(
         self,
         hparams: AugmenterParameters,
         color_picker: RandomColorPicker
     ) -> None:
-        super().__init__()
+        super(AugmentationTransform, self).__init__()
         self.perpendicular_angle_distrib = \
             hparams.line_perpendicular_angle_distrib
         if all(len(self.perpendicular_angle_distrib) != i for i in (2, 4)):
@@ -125,18 +178,36 @@ class DrawRandomLine(nn.Module):
         self.color_picker = color_picker
         self.hues = hparams.line_hues
 
-        # TODO: This is ugly, change tranform signature maybe?
-        self.image_size = hparams.IMG_SIZE
+        self.max_num_transforms = hparams.line_max_num
+        if hparams.line_max_num < 1:
+            raise ValueError(
+                f"Expected line_max_num > 0, got {hparams.line_max_num}"
+            )
 
-    def forward(self, draw: ImageDraw.ImageDraw, mode, num_lines=1):
+    def forward(
+        self,
+        draw: ImageDraw.ImageDraw,
+        image_size: tuple[int, int],
+        mode: str
+    ) -> str:
         color, color_name = self.color_picker.get_color(self.hues, mode=mode)
+        num_lines = random.randint(1, self.max_num_transforms)
         for _ in range(num_lines):
-            # Get angle with perpendicular from (1, 0) on unit circle.
+            # Get length on perpendicular from image center (0, 0) to the line.
+            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
+            # dist_<x|y> = 0.5 * image_size[x|y] * <random fraction>
+            dist = math.sqrt(sum(
+                (
+                    0.5 *
+                    image_size[i] *
+                    truncnorm_in_sample_space(*self.center_dist_distrib)
+                ) ** 2
+                for i in range(2)
+            ))
+
+            # Get angle with perpendicular from (0, 0).
             angle = self.angle_distrib_fun(*self.perpendicular_angle_distrib)
             angle *= math.pi / 180
-
-            # Get length on perpendicular from (0, 0) to the line.
-            dist = truncnorm_in_sample_space(*self.center_dist_distrib)
 
             # Params for the line of form: y = a * x + b.
             a = math.tan(angle - math.pi / 2)
@@ -156,15 +227,15 @@ class DrawRandomLine(nn.Module):
             valid_incidences = []
             def is_valid_incidence(coord, axis):
                 return (
-                    (-self.image_size[axis] // 2 <= coord) and
-                    (coord <= self.image_size[axis] // 2)
+                    (-image_size[axis] // 2 <= coord) and
+                    (coord <= image_size[axis] // 2)
                 )
 
             for side_x, side_y in (
-                (self.image_size[0] // 2, None),
-                (None, self.image_size[1] // 2),
-                (-self.image_size[0] // 2, None),
-                (None, -self.image_size[1] // 2),
+                (image_size[0] // 2, None),
+                (None, image_size[1] // 2),
+                (-image_size[0] // 2, None),
+                (None, -image_size[1] // 2),
             ):
                 if side_x is None:
                     assert side_y is not None
@@ -179,8 +250,8 @@ class DrawRandomLine(nn.Module):
                     if not is_valid_incidence(y, 1):
                         continue
                 valid_incidences.append(
-                    (int(x + self.image_size[0] // 2),
-                     int(y + self.image_size[1] // 2))
+                    (int(x + image_size[0] // 2),
+                     int(y + image_size[1] // 2))
                 )
 
             # Process edge case 3.
@@ -230,7 +301,7 @@ class DecorateImage(nn.Module):
     def __init__(
         self,
         hparams: AugmenterParameters,
-        transforms
+        transforms: list[AugmentationTransform]
     ) -> None:
         super().__init__()
         self.transforms = transforms
@@ -249,11 +320,7 @@ class DecorateImage(nn.Module):
         transforms_doing = random.choices(self.transforms, k=num_transforms)
         label_mods = []
         for transform in transforms_doing:
-            if isinstance(transform, tuple):
-                num = random.randint(1, transform[1])
-                label_mod = transform[0](draw, src.mode, num)
-            else:
-                label_mod = transform(draw, src.mode)
+            label_mod = transform(draw, src.size, src.mode)
 
             label_mods.append(f"{label_mod}{suffix}")
 
@@ -262,17 +329,19 @@ class DecorateImage(nn.Module):
 
     def forward(
         self,
-        inp: \
-            tuple[Image.Image, str] |
-            tuple[Image.Image, str, Image.Image]
-    ) -> tuple[Image.Image, str] | tuple[Image.Image, str, Image.Image]:
-        src, label_addon = inp[:2]
-        passthrough = inp[-1]
+        inp: tuple[Image.Image, str]
+    ) -> tuple[Image.Image, str]:
+        src, label_addon = inp
+        return self._inner_forward(src, label_addon, ' over it')
 
-        if isinstance(passthrough, Image.Image):
-            return (*self._inner_forward(src, label_addon), passthrough)
-        else:
-            return self._inner_forward(src, label_addon, ' over it')
+
+class DecorateImageWithPassthrough(DecorateImage):
+    def forward(
+        self,
+        inp: tuple[Image.Image, str, Image.Image]
+    ) -> tuple[Image.Image, str, Image.Image]:
+        src, label_addon = inp[:2]
+        return (*self._inner_forward(src, label_addon), inp[2])
 
 
 class CompositeMNISTImage(nn.Module):

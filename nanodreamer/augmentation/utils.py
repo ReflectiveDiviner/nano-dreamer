@@ -1,9 +1,4 @@
-import random
-
-from numpy.random import MT19937, SeedSequence, RandomState
 from scipy.stats import truncnorm
-
-import torch
 
 
 def truncnorm_in_sample_space(
@@ -34,12 +29,3 @@ def truncnorm_in_sample_space(
     )
 
     return truncnorm.rvs(a, b, loc=loc, scale=scale)
-
-
-def set_seeds(
-    seed: int,
-) -> torch.Generator:
-    # Sets seeds, essentially an extension of torch.manual_seed.
-    random.seed(seed)
-    RandomState(MT19937(SeedSequence(seed)))
-    return torch.manual_seed(seed)

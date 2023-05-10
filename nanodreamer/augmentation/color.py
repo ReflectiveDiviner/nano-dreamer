@@ -1,8 +1,8 @@
 import random
 from PIL import ImageColor
 
-from config import AugmenterParameters
-from utils import truncnorm_in_sample_space
+from .config import AugmenterParameters
+from .utils import truncnorm_in_sample_space
 
 
 class RandomColorPicker:
