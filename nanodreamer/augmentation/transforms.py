@@ -9,7 +9,10 @@ import torchvision as tv
 
 from .config import AugmenterParameters
 from .color import RandomColorPicker
-from .utils import truncnorm_in_sample_space
+from .utils import (
+    truncnorm_in_sample_space,
+    generate_distance_and_angle,
+)
 
 
 class CreateBackground(nn.Module):
@@ -91,9 +94,9 @@ class DrawRandomCircle(AugmentationTransform):
         if all(len(self.center_direction_angle_distrib) != i for i in (2, 4)):
             raise ValueError("Invalid distribution parameters.")
         if len(self.center_direction_angle_distrib) == 4:
-            self.angle_distrib_fun = truncnorm_in_sample_space
+            self.angle_dist_rvs_fn = truncnorm_in_sample_space
         if len(self.center_direction_angle_distrib) == 2:
-            self.angle_distrib_fun = random.uniform
+            self.angle_dist_rvs_fn = random.uniform
 
         self.center_dist_distrib = hparams.circle_center_dist_distrib
 
@@ -118,20 +121,15 @@ class DrawRandomCircle(AugmentationTransform):
         num_circles = random.randint(1, self.max_num_transforms)
         for _ in range(num_circles):
             # Get distance from image center (0, 0) to circle center.
-            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
-            # dist_<x|y> = 0.5 * image_size[x|y] * <random fraction>
-            dist = math.sqrt(sum(
-                (
-                    0.5 *
-                    image_size[i] *
-                    truncnorm_in_sample_space(*self.center_dist_distrib)
-                ) ** 2
-                for i in range(2)
-            ))
-
-            # Get angle with direction to circle center from (0, 0).
-            angle = self.angle_distrib_fun(*self.center_direction_angle_distrib)
-            angle *= math.pi / 180
+            # Get angle between (1,0) and
+            # direction to circle center from (0, 0).
+            angle, dist = generate_distance_and_angle(
+                image_size,
+                self.center_dist_distrib,
+                truncnorm_in_sample_space,
+                self.center_direction_angle_distrib,
+                self.angle_dist_rvs_fn
+            )
 
             # Compute center position.
             c_x = int(dist * math.cos(angle) + image_size[0] // 2)
@@ -169,9 +167,9 @@ class DrawRandomLine(AugmentationTransform):
         if all(len(self.perpendicular_angle_distrib) != i for i in (2, 4)):
             raise ValueError('Invalid distribution parameters.')
         if len(self.perpendicular_angle_distrib) == 4:
-            self.angle_distrib_fun = truncnorm_in_sample_space
+            self.angle_dist_rvs_fn = truncnorm_in_sample_space
         if len(self.perpendicular_angle_distrib) == 2:
-            self.angle_distrib_fun = random.uniform
+            self.angle_dist_rvs_fn = random.uniform
 
         self.center_dist_distrib = hparams.line_center_dist_distrib
 
@@ -193,21 +191,16 @@ class DrawRandomLine(AugmentationTransform):
         color, color_name = self.color_picker.get_color(self.hues, mode=mode)
         num_lines = random.randint(1, self.max_num_transforms)
         for _ in range(num_lines):
-            # Get length on perpendicular from image center (0, 0) to the line.
-            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
-            # dist_<x|y> = 0.5 * image_size[x|y] * <random fraction>
-            dist = math.sqrt(sum(
-                (
-                    0.5 *
-                    image_size[i] *
-                    truncnorm_in_sample_space(*self.center_dist_distrib)
-                ) ** 2
-                for i in range(2)
-            ))
-
-            # Get angle with perpendicular from (0, 0).
-            angle = self.angle_distrib_fun(*self.perpendicular_angle_distrib)
-            angle *= math.pi / 180
+            # Get length of perpendicular from image center (0, 0) to the line.
+            # Get angle between (0, 1) and
+            # perpendicular from image center (0, 0).
+            angle, dist = generate_distance_and_angle(
+                image_size,
+                self.center_dist_distrib,
+                truncnorm_in_sample_space,
+                self.perpendicular_angle_distrib,
+                self.angle_dist_rvs_fn
+            )
 
             # Params for the line of form: y = a * x + b.
             a = math.tan(angle - math.pi / 2)

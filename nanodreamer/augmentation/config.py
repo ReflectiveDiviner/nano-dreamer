@@ -5,6 +5,7 @@ UniformDistParams = tuple[float, float]
 # TruncNorm distribution parameters are given in sample space in the form
 # (left_bound, right_bound, rel_mu, rel_sigma)
 SampleSpaceTruncNormDistParams = tuple[float, float, float, float]
+DistributionParameters = UniformDistParams | SampleSpaceTruncNormDistParams
 
 
 @dataclasses.dataclass
@@ -41,11 +42,10 @@ class AugmenterParameters:
         default_factory=lambda: ['red', 'yellow', 'blue']
     )
 
-    max_num_transforms = 2
+    max_num_transforms: int = 2
 
     # TODO: Make transform configuration hierarchical.
-    circle_center_direction_angle_distrib: \
-        UniformDistParams | SampleSpaceTruncNormDistParams \
+    circle_center_direction_angle_distrib: DistributionParameters \
         = (0, 360)
     # min and max are in fractions of half of image spatial sizes.
     circle_center_dist_distrib: SampleSpaceTruncNormDistParams \
@@ -58,8 +58,7 @@ class AugmenterParameters:
     )
     circle_max_num: int = 3
 
-    line_perpendicular_angle_distrib: \
-        UniformDistParams | SampleSpaceTruncNormDistParams \
+    line_perpendicular_angle_distrib: DistributionParameters \
         = (0, 360)
     # min and max are in fractions of half of image spatial sizes.
     line_center_dist_distrib: SampleSpaceTruncNormDistParams \
