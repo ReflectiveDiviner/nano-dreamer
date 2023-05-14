@@ -91,12 +91,13 @@ class DrawRandomCircle(AugmentationTransform):
         super(AugmentationTransform, self).__init__()
         self.center_direction_angle_distrib = \
             hparams.circle_center_direction_angle_distrib
-        if all(len(self.center_direction_angle_distrib) != i for i in (2, 4)):
+        if any(
+            all(
+                len(dist_p) != i for i in (2, 4)
+            )
+            for dist_p in self.center_direction_angle_distrib
+        ):
             raise ValueError("Invalid distribution parameters.")
-        if len(self.center_direction_angle_distrib) == 4:
-            self.angle_dist_rvs_fn = truncnorm_in_sample_space
-        if len(self.center_direction_angle_distrib) == 2:
-            self.angle_dist_rvs_fn = random.uniform
 
         self.center_dist_distrib = hparams.circle_center_dist_distrib
 
@@ -126,9 +127,7 @@ class DrawRandomCircle(AugmentationTransform):
             angle, dist = generate_distance_and_angle(
                 image_size,
                 self.center_dist_distrib,
-                truncnorm_in_sample_space,
                 self.center_direction_angle_distrib,
-                self.angle_dist_rvs_fn
             )
 
             # Compute center position.
@@ -164,12 +163,13 @@ class DrawRandomLine(AugmentationTransform):
         super(AugmentationTransform, self).__init__()
         self.perpendicular_angle_distrib = \
             hparams.line_perpendicular_angle_distrib
-        if all(len(self.perpendicular_angle_distrib) != i for i in (2, 4)):
+        if any(
+            all(
+                len(dist_p) != i for i in (2, 4)
+            )
+            for dist_p in self.perpendicular_angle_distrib
+        ):
             raise ValueError('Invalid distribution parameters.')
-        if len(self.perpendicular_angle_distrib) == 4:
-            self.angle_dist_rvs_fn = truncnorm_in_sample_space
-        if len(self.perpendicular_angle_distrib) == 2:
-            self.angle_dist_rvs_fn = random.uniform
 
         self.center_dist_distrib = hparams.line_center_dist_distrib
 
@@ -197,9 +197,7 @@ class DrawRandomLine(AugmentationTransform):
             angle, dist = generate_distance_and_angle(
                 image_size,
                 self.center_dist_distrib,
-                truncnorm_in_sample_space,
                 self.perpendicular_angle_distrib,
-                self.angle_dist_rvs_fn
             )
 
             # Params for the line of form: y = a * x + b.
@@ -209,9 +207,8 @@ class DrawRandomLine(AugmentationTransform):
             # Find all incidences with image sides that are inside the image.
             # Edge cases:
             #   1. Single incidence at the vertex.
-            #      This never happens,
-            #      would require dist = IMG_SIZE[0] * sqrt(2) // 2.
-            #      Our dist <= IMG_SIZE // 2.
+            #      Pick reasonable distribution parameters to prevent this.
+            #      We put an assert there to check if there's an issue.
             #   2. Incidence on entire edge of the image.
             #      This almost certainly can't happen since even if the angle
             #      would perfectly align, division by 0 prevention should place

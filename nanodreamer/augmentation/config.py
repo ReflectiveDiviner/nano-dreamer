@@ -45,8 +45,9 @@ class AugmenterParameters:
     max_num_transforms: int = 2
 
     # TODO: Make transform configuration hierarchical.
-    circle_center_direction_angle_distrib: DistributionParameters \
-        = (0, 360)
+    # All angles must be within (0, 360).
+    circle_center_direction_angle_distrib: list[DistributionParameters] \
+        = dataclasses.field(default_factory=lambda: [(0, 360), (0, 50, 0.5, 0.25)])
     # min and max are in fractions of half of image spatial sizes.
     circle_center_dist_distrib: SampleSpaceTruncNormDistParams \
         = (1 / 4, 3 / 4, 0.5, 0.25)
@@ -58,11 +59,12 @@ class AugmenterParameters:
     )
     circle_max_num: int = 3
 
-    line_perpendicular_angle_distrib: DistributionParameters \
-        = (0, 360)
+    # All angles must be within (0, 360).
+    line_perpendicular_angle_distrib: list[DistributionParameters] \
+        = dataclasses.field(default_factory=lambda: [(0, 360), (0, 50, 0.5, 0.25)])
     # min and max are in fractions of half of image spatial sizes.
     line_center_dist_distrib: SampleSpaceTruncNormDistParams \
-        = (0, 1, 0.5, 0.25)
+        = (0, 0.9, 0.5, 0.25)
     line_hues: list[str] = dataclasses.field(
         default_factory=lambda: ['cyan', 'magenta']
     )
